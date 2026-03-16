@@ -3,12 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useMemo } from "react";
 import { getUserLocation } from "@/utils/useGeolocation";
-import { SidebarWithSearch } from "@/components/Sidebar";
 import { WeatherCard } from "@/components/MainWeatherCard";
 import { HourlyWeatherCard } from "@/components/HourlyWeatherCard";
+import { DailyWeatherCard } from "@/components/DailyWeatherCard";
 import geocodeAddress from "@/libs/reactGeocode";
 import { WeatherData } from "@/types/weather";
 import { getBackgroundUrl } from "@/utils/pickBackground";
+import { MiscWeatherCardContainer } from "@/components/MiscWeatherCardHolder";
 
 const FALLBACK_LOCATION = {
 	name: "New York",
@@ -69,7 +70,7 @@ export default function Home() {
 					...weatherData,
 					current: {
 						...weatherData.current,
-						temp: Math.round(((weatherData.current.temp - 273.15) * 9) / 5 + 32),
+						// temp: Math.round(((weatherData.current.temp - 273.15) * 9) / 5 + 32),
 					},
 				});
 
@@ -85,7 +86,7 @@ export default function Home() {
 						...weatherData,
 						current: {
 							...weatherData.current,
-							temp: Math.round(((weatherData.current.temp - 273.15) * 9) / 5 + 32),
+							// temp: Math.round(((weatherData.current.temp - 273.15) * 9) / 5 + 32),
 						},
 					});
 
@@ -105,49 +106,68 @@ export default function Home() {
 		};
 	}, []);
 
-	let bgURL = useMemo(() => getBackgroundUrl(weather), [weather]);
+	const bgURL = useMemo(() => getBackgroundUrl(weather), [weather]);
 
 	return (
 		<div
-			className="flex h-screen gap-4"
+			className="flex h-screen gap-4 "
 			style={{
-				backgroundImage: `url(${bgURL})`,
+				backgroundImage: `linear-gradient(to bottom, transparent 90%, #0170EB), url(${bgURL})`,
 				backgroundSize: "cover",
 				backgroundPosition: "center",
 			}}>
-			<main className="flex-1 p-6">
+			<main className="[text-shadow:0_0_1px_black] mx-auto text-xl text-white-800 flex-1 p-6 2xl:max-w-8/10 max-w-9/10">
 				{weather && !error ?
 					<WeatherCard
 						location={locationName ?? "N/A"}
-						temp={weather.current.temp ?? "N/A"}
+						temp={Math.round(weather.current.temp) ?? "N/A"}
 						humidity={weather.current.humidity ?? "N/A"}
 						uvi={weather.current.uvi ?? "N/A"}
 						description={weather.current.weather[0]?.description ?? "N/A"}
+						feels_Like={weather.current.feels_like}
 					/>
 				: error ?
 					<p className="text-red-500">{error}</p>
-				:	<WeatherCard location={"Loading..."} temp={0} humidity={0} uvi={0} description={"Loading..."} />}
-				<div className="mt-6 flex overflow-x-auto bg-white rounded-sm p-4 gap-4">
+				:	<WeatherCard location={"Loading..."} temp={0} humidity={0} description={"Loading..."} />}
+				<div className="mt-6 grid grid-cols-1 lg:grid-cols-4 2xl:grid-cols-12 mx-auto bg-blue-300/40 rounded-lg p-4 gap-4">
 					{weather && !error ?
-						weather?.hourly
-							.slice(0, 12)
-							.map((hour, idx) => (
-								<HourlyWeatherCard
-									key={idx}
-									time={new Date(hour.dt * 1000).toLocaleTimeString([], {
-										hour: "2-digit",
-										minute: "2-digit",
-									})}
-									temp={Math.round(((hour.temp - 273.15) * 9) / 5 + 32)}
-									humidity={hour.humidity}
-									uvi={hour.uvi}
-									description={hour.weather[0]?.description ?? "N/A"}
-								/>
-							))
+						weather?.hourly.slice(0, 12).map((hour, idx) => (
+							<HourlyWeatherCard
+								key={idx}
+								time={new Date(hour.dt * 1000).toLocaleTimeString([], {
+									hour: "2-digit",
+									minute: "2-digit",
+								})}
+								temp={Math.round(hour.temp)}
+								humidity={hour.humidity}
+								uvi={hour.uvi}
+								description={hour.weather[0]?.description ?? "N/A"}
+							/>
+						))
 					: error ?
 						<p className="text-red-500">{error}</p>
-					:	<HourlyWeatherCard time={"Loading..."} temp={0} humidity={0} uvi={0} description={"Loading..."} />}
+					:	<HourlyWeatherCard time={"Loading..."} temp={0} humidity={0} description={"Loading..."} />}
 				</div>
+				<div className="mt-6 grid grid-cols-1 2xl:grid-cols-7 mx-auto bg-blue-300/40 rounded-lg p-4 gap-4">
+					{weather && !error ?
+						weather?.daily.slice(0, 7).map((daily, idx) => (
+							<DailyWeatherCard
+								key={idx}
+								time={new Date(daily.dt * 1000).toLocaleDateString([], {
+									weekday: "long" 
+									
+								})}
+								temp={daily.temp}
+								humidity={daily.humidity}
+								summary={daily.summary}
+								weather={daily.weather}
+							/>
+						))
+						: error ?
+						<p className="text-red-500">{error}</p>
+					:	<HourlyWeatherCard time={"Loading..."} temp={0} humidity={0} description={"Loading..."} />}
+				</div>
+{weather?.current && <MiscWeatherCardContainer current={weather.current} />}
 			</main>
 		</div>
 	);

@@ -3,6 +3,7 @@ from django.db import models
 class WeatherResponse(models.Model):
     lat = models.FloatField()
     lon = models.FloatField()
+    
     data = models.JSONField(default=dict)  # raw OpenWeather response
     fetched_at = models.DateTimeField(auto_now_add=True)
 

@@ -19,8 +19,14 @@ class WeatherViewSet(ViewSet):
     permission_classes = [AllowAny]
 
     def list(self, request):
-        lat = float(request.query_params.get("lat", 35.6895))
-        lon = float(request.query_params.get("lon", 139.6917))
+        try:
+            lat = round(float(request.query_params.get("lat", 35.6895)), 3)
+            lon = round(float(request.query_params.get("lon", 139.6917)), 3)
+        except (TypeError, ValueError):
+            return Response({"error": "Invalid lat/lon"}, status=400)
+        units = request.query_params.get("units", "standard")
+        if units not in {"standard", "metric", "imperial"}:
+            units = "imperial"
 
         # 1️⃣ Try cache
         cached = (
@@ -45,6 +51,7 @@ class WeatherViewSet(ViewSet):
             "lon": lon,
             "exclude": "minutely",
             "appid": api_key,
+            "units": units,
         }
         
         r = requests.get(url, params=params, timeout=10)
